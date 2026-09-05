@@ -1,0 +1,278 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+---
+
+<Layout 
+  title="Free AI Background Remover — 100% Private & Client-Side" 
+  description="Remove image backgrounds instantly in your browser. Powered by client-side AI. No file uploads, total privacy, and high-resolution export."
+>
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white">AI</div>
+        <span class="font-semibold text-lg tracking-tight">SnapErase</span>
+      </div>
+      <div class="text-xs font-mono bg-slate-800 text-indigo-400 px-2.5 py-1 rounded-full border border-slate-700">
+        100% Client-Side
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+    <!-- Hero / Intro -->
+    <div class="text-center max-w-2xl mx-auto space-y-2">
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+        Remove Image Backgrounds <span class="text-indigo-400">Instantly</span>
+      </h1>
+      <p class="text-slate-400 text-sm sm:text-base">
+        Zero server processing. Your photos never leave your device.
+      </p>
+    </div>
+
+    <!-- Drop Zone & Canvas Workspace -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+      
+      <!-- Interactive Canvas Container -->
+      <div class="lg:col-span-2 flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-indigo-500 transition-colors rounded-2xl p-6 bg-slate-900/30 relative min-h-[400px]" id="drop-zone">
+        
+        <!-- Upload State -->
+        <div id="upload-state" class="flex flex-col items-center gap-4 text-center">
+          <div class="p-4 rounded-full bg-slate-800/80 text-indigo-400 border border-slate-700">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          </div>
+          <div>
+            <p class="font-medium text-slate-200">Drag & drop an image here, or click to browse</p>
+            <p class="text-xs text-slate-500 mt-1">Supports PNG, JPG, WebP up to 4K resolution</p>
+          </div>
+          <input type="file" id="file-input" accept="image/png, image/jpeg, image/webp" class="hidden" />
+          <button id="browse-btn" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/20">
+            Select Image
+          </button>
+        </div>
+
+        <!-- Processing State -->
+        <div id="processing-state" class="hidden flex-col items-center gap-3 text-center">
+          <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <p id="progress-text" class="text-sm font-mono text-indigo-400">Initializing AI Model...</p>
+        </div>
+
+        <!-- Canvas Display State -->
+        <div id="canvas-container" class="hidden relative w-full h-full flex items-center justify-center">
+          <canvas id="output-canvas" class="max-w-full max-h-[500px] object-contain rounded-lg shadow-2xl"></canvas>
+        </div>
+      </div>
+
+      <!-- Control Panel Sidebar -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-6">
+        <h2 class="text-base font-semibold text-slate-200 border-b border-slate-800 pb-3">Background Controls</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="text-xs font-mono text-slate-400 block mb-2">BACKGROUND TYPE</label>
+            <div class="grid grid-cols-4 gap-2">
+              <button class="bg-mode-btn p-2 text-xs rounded-lg border border-slate-700 bg-slate-800 text-white hover:border-indigo-500 active" data-mode="transparent">Transparent</button>
+              <button class="bg-mode-btn p-2 text-xs rounded-lg border border-slate-700 bg-slate-800 text-white hover:border-indigo-500" data-mode="color">Color</button>
+              <button class="bg-mode-btn p-2 text-xs rounded-lg border border-slate-700 bg-slate-800 text-white hover:border-indigo-500" data-mode="blur">Blur</button>
+              <button class="bg-mode-btn p-2 text-xs rounded-lg border border-slate-700 bg-slate-800 text-white hover:border-indigo-500" data-mode="image">Image</button>
+            </div>
+          </div>
+
+          <!-- Color Picker Input -->
+          <div id="color-picker-group" class="hidden space-y-2">
+            <label class="text-xs font-mono text-slate-400 block">SELECT COLOR</label>
+            <input type="color" id="bg-color-picker" value="#ffffff" class="w-full h-10 rounded-lg cursor-pointer bg-slate-800 border border-slate-700 p-1" />
+          </div>
+
+          <!-- Blur Slider Input -->
+          <div id="blur-slider-group" class="hidden space-y-2">
+            <label class="text-xs font-mono text-slate-400 block">BLUR RADIUS</label>
+            <input type="range" id="blur-slider" min="1" max="20" value="8" class="w-full accent-indigo-500" />
+          </div>
+        </div>
+
+        <!-- Export Action -->
+        <div class="mt-auto pt-4 border-t border-slate-800">
+          <button id="download-btn" disabled class="w-full py-3 rounded-xl bg-slate-800 text-slate-500 font-semibold text-sm cursor-not-allowed transition-all">
+            Download High-Res Image
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { CanvasEngine, type BackgroundMode } from '../utils/canvasEngine';
+
+  const dropZone = document.getElementById('drop-zone')!;
+  const fileInput = document.getElementById('file-input') as HTMLInputElement;
+  const browseBtn = document.getElementById('browse-btn')!;
+  const uploadState = document.getElementById('upload-state')!;
+  const processingState = document.getElementById('processing-state')!;
+  const canvasContainer = document.getElementById('canvas-container')!;
+  const progressText = document.getElementById('progress-text')!;
+  const outputCanvas = document.getElementById('output-canvas') as HTMLCanvasElement;
+  const downloadBtn = document.getElementById('download-btn') as HTMLButtonElement;
+  const colorPickerGroup = document.getElementById('color-picker-group')!;
+  const blurSliderGroup = document.getElementById('blur-slider-group')!;
+  const bgColorPicker = document.getElementById('bg-color-picker') as HTMLInputElement;
+  const blurSlider = document.getElementById('blur-slider') as HTMLInputElement;
+  const modeBtns = document.querySelectorAll<HTMLButtonElement>('.bg-mode-btn');
+
+  let canvasEngine: CanvasEngine | null = null;
+  let worker: Worker | null = null;
+  let currentFile: File | null = null;
+
+  if (outputCanvas) {
+    canvasEngine = new CanvasEngine(outputCanvas);
+  }
+
+  function initWorker() {
+    worker = new Worker(new URL('../workers/segmentation.worker.ts', import.meta.url), {
+      type: 'module',
+    });
+
+    worker.onmessage = (e) => {
+      const { type, progress, resultBlob, error, key } = e.data;
+
+      if (type === 'PROGRESS') {
+        const action = key?.includes('fetch') ? 'Downloading Model' : 'Processing Image';
+        progressText.innerText = `${action}... ${progress}%`;
+      } 
+      else if (type === 'SUCCESS' && resultBlob) {
+        handleInferenceComplete(resultBlob);
+      } 
+      else if (type === 'ERROR') {
+        alert(`Error: ${error}`);
+        resetUI();
+      }
+    };
+  }
+
+  browseBtn?.addEventListener('click', () => fileInput?.click());
+
+  fileInput?.addEventListener('change', (e) => {
+    const files = (e.target as HTMLInputElement).files;
+    if (files?.length) processFile(files[0]);
+  });
+
+  dropZone?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-indigo-500');
+  });
+
+  dropZone?.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500'));
+
+  dropZone?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-indigo-500');
+    if (e.dataTransfer?.files.length) processFile(e.dataTransfer.files[0]);
+  });
+
+  function processFile(file: File) {
+    if (!file.type.startsWith('image/')) return;
+    currentFile = file;
+
+    uploadState.classList.add('hidden');
+    processingState.classList.remove('hidden');
+    processingState.classList.add('flex');
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        canvasEngine?.setOriginalImage(img);
+        
+        if (!worker) initWorker();
+        worker?.postMessage({
+          type: 'PROCESS_IMAGE',
+          imageBlob: file,
+        });
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleInferenceComplete(maskBlob: Blob) {
+    const maskUrl = URL.createObjectURL(maskBlob);
+    const maskImg = new Image();
+    
+    maskImg.onload = () => {
+      canvasEngine?.setForegroundMask(maskImg);
+
+      processingState.classList.add('hidden');
+      processingState.classList.remove('flex');
+      canvasContainer.classList.remove('hidden');
+
+      downloadBtn.disabled = false;
+      downloadBtn.classList.remove('bg-slate-800', 'text-slate-500', 'cursor-not-allowed');
+      downloadBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-500', 'text-white', 'shadow-lg');
+    };
+
+    maskImg.src = maskUrl;
+  }
+
+  modeBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      modeBtns.forEach((b) => b.classList.remove('border-indigo-500', 'text-indigo-400'));
+      btn.classList.add('border-indigo-500', 'text-indigo-400');
+
+      const mode = btn.dataset.mode as BackgroundMode;
+
+      colorPickerGroup.classList.toggle('hidden', mode !== 'color');
+      blurSliderGroup.classList.toggle('hidden', mode !== 'blur');
+
+      if (mode === 'image') {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+          const bgFile = (e.target as HTMLInputElement).files?.[0];
+          if (bgFile) {
+            const bgImg = new Image();
+            bgImg.onload = () => {
+              canvasEngine?.setCustomBgImage(bgImg);
+              canvasEngine?.updateBackground('image');
+            };
+            bgImg.src = URL.createObjectURL(bgFile);
+          }
+        };
+        input.click();
+      } else {
+        canvasEngine?.updateBackground(mode, bgColorPicker.value, parseInt(blurSlider.value));
+      }
+    });
+  });
+
+  bgColorPicker?.addEventListener('input', (e) => {
+    canvasEngine?.updateBackground('color', (e.target as HTMLInputElement).value);
+  });
+
+  blurSlider?.addEventListener('input', (e) => {
+    canvasEngine?.updateBackground('blur', undefined, parseInt((e.target as HTMLInputElement).value));
+  });
+
+  downloadBtn?.addEventListener('click', () => {
+    if (!canvasEngine || !currentFile) return;
+    const dataUrl = canvasEngine.exportPNG();
+    const link = document.createElement('a');
+    
+    const fileNameParts = currentFile.name.split('.');
+    fileNameParts.pop();
+    link.download = `${fileNameParts.join('.')}-bg-removed.png`;
+    
+    link.href = dataUrl;
+    link.click();
+  });
+
+  function resetUI() {
+    uploadState.classList.remove('hidden');
+    processingState.classList.add('hidden');
+    canvasContainer.classList.add('hidden');
+  }
+</script>
