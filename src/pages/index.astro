@@ -7,27 +7,6 @@ import "../styles/global.css";
   title="Free AI Background Remover — 100% Private & Client-Side"
   description="Remove image backgrounds instantly in your browser. Powered by client-side AI. No file uploads, total privacy, and high-resolution export."
 >
-  <!-- Header -->
-  <header
-    class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50"
-  >
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <div
-          class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white"
-        >
-          AI
-        </div>
-        <span class="font-semibold text-lg tracking-tight">SnapErase</span>
-      </div>
-      <div
-        class="text-xs font-mono bg-slate-800 text-indigo-400 px-2.5 py-1 rounded-full border border-slate-700"
-      >
-        100% Client-Side
-      </div>
-    </div>
-  </header>
-
   <!-- Main Workspace -->
   <main
     class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6"
@@ -43,141 +22,223 @@ import "../styles/global.css";
     </div>
 
     <!-- Drop Zone & Canvas Workspace -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-start">
       <!-- Interactive Canvas Container -->
       <div
-        class="lg:col-span-2 flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-indigo-500 transition-colors rounded-2xl p-6 bg-slate-900/30 relative min-h-[400px]"
+        class="lg:col-span-2 flex flex-col items-center justify-center border-2 border-dashed border-slate-800 hover:border-indigo-500/50 transition-colors rounded-2xl p-4 sm:p-6 bg-slate-900/40 backdrop-blur-sm relative min-h-[460px] overflow-hidden group"
         id="drop-zone"
       >
-        <!-- Upload State -->
+        <!-- Drag & Drop Hover Overlay (Active during processing or complete state) -->
+        <div
+          id="drop-overlay"
+          class="absolute inset-0 bg-indigo-950/80 backdrop-blur-sm border-2 border-indigo-500 rounded-2xl flex flex-col items-center justify-center z-30 opacity-0 pointer-events-none transition-opacity duration-200"
+        >
+          <svg class="w-12 h-12 text-indigo-400 mb-2 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <p class="text-white font-medium text-base">Drop image to replace current work</p>
+        </div>
+
+        <!-- Initial Upload State -->
         <div
           id="upload-state"
-          class="flex flex-col items-center gap-4 text-center"
+          class="flex flex-col items-center gap-4 text-center max-w-sm py-8"
         >
           <div
-            class="p-4 rounded-full bg-slate-800/80 text-indigo-400 border border-slate-700"
+            class="p-4 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-inner"
           >
             <svg
-              class="w-8 h-8"
+              class="w-10 h-10"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              ><path
+            >
+              <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                stroke-width="2"
+                stroke-width="1.5"
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              ></path></svg
-            >
+              ></path>
+            </svg>
           </div>
           <div>
-            <p class="font-medium text-slate-200">
-              Drag & drop an image here, or click to browse
+            <p class="font-semibold text-slate-200 text-base">
+              Drag & drop image here
             </p>
-            <p class="text-xs text-slate-500 mt-1">
+            <p class="text-xs text-slate-400 mt-1">
               Supports PNG, JPG, WebP up to 4K resolution
             </p>
           </div>
-          <input
-            type="file"
-            id="file-input"
-            accept="image/png, image/jpeg, image/webp"
-            class="hidden"
-          />
+          
+          <div class="flex items-center gap-3 w-full my-1">
+            <div class="h-px bg-slate-800 flex-1"></div>
+            <span class="text-[10px] font-mono text-slate-500 uppercase tracking-wider">or</span>
+            <div class="h-px bg-slate-800 flex-1"></div>
+          </div>
+
           <button
             id="browse-btn"
-            class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/20"
+            type="button"
+            class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/25 active:scale-95"
           >
-            Select Image
+            Select File from Device
           </button>
         </div>
 
-        <!-- Processing State -->
+        <!-- Hidden Global File Input -->
+        <input
+          type="file"
+          id="file-input"
+          accept="image/png, image/jpeg, image/webp"
+          class="hidden"
+        />
+
+        <!-- Processing Loading State -->
         <div
           id="processing-state"
-          class="hidden flex-col items-center gap-3 text-center"
+          class="hidden flex-col items-center gap-4 text-center py-8 z-10"
         >
-          <div
-            class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"
-          >
+          <div class="relative flex items-center justify-center">
+            <div class="w-14 h-14 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+            <svg class="w-6 h-6 text-indigo-400 absolute" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
           </div>
-          <p id="progress-text" class="text-sm font-mono text-indigo-400">
+          <p id="progress-text" class="text-sm font-mono text-indigo-300 bg-indigo-950/60 border border-indigo-800/50 px-3 py-1 rounded-full">
             Initializing AI Model...
           </p>
         </div>
 
-        <!-- Canvas Display State -->
+        <!-- Active Canvas Display State -->
         <div
           id="canvas-container"
-          class="hidden relative w-full h-full flex items-center justify-center"
+          class="hidden flex-col w-full h-full relative"
         >
-          <canvas
-            id="output-canvas"
-            class="max-w-full max-h-[500px] object-contain rounded-lg shadow-2xl"
-          ></canvas>
+          <!-- Workspace Action Bar -->
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-4 w-full">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Processed
+              </span>
+              <span class="text-xs text-slate-500 hidden sm:inline">Drop new image anytime to replace</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                id="replace-btn"
+                type="button"
+                class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors border border-slate-700 flex items-center gap-1.5"
+              >
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Change Image
+              </button>
+              <button
+                id="reset-btn"
+                type="button"
+                title="Remove image"
+                class="p-1.5 rounded-lg bg-slate-800 hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors border border-slate-700 hover:border-red-500/30"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Canvas Preview Box -->
+          <div class="flex-1 min-h-[350px] flex items-center justify-center p-2 rounded-xl bg-slate-950/50 border border-slate-800/60 relative overflow-hidden">
+            <canvas
+              id="output-canvas"
+              class="max-w-full max-h-[420px] object-contain rounded-lg shadow-2xl"
+            ></canvas>
+          </div>
         </div>
       </div>
 
       <!-- Control Panel Sidebar -->
       <div
-        class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-6"
+        class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-5 flex flex-col gap-6 shadow-xl"
       >
-        <h2
-          class="text-base font-semibold text-slate-200 border-b border-slate-800 pb-3"
-        >
-          Controls & Engine
-        </h2>
+        <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-slate-200 tracking-wide uppercase font-mono">
+            Engine Controls
+          </h2>
+          <span class="text-[10px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 font-mono">v1.0</span>
+        </div>
 
-        <div class="space-y-5">
+        <div class="space-y-6">
           <!-- Processing Mode Selector -->
-          <div>
-            <label class="text-xs font-mono text-slate-400 block mb-2"
-              >PROCESSING MODE</label
-            >
-            <div class="grid grid-cols-2 gap-2">
+          <div class="space-y-2">
+            <label class="text-xs font-mono text-slate-400 block tracking-wider uppercase">
+              Processing Mode
+            </label>
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950/60 rounded-xl border border-slate-800">
               <button
-                class="proc-mode-btn p-2 text-xs rounded-lg border border-indigo-500 bg-slate-800 text-indigo-400 font-medium transition-all"
+                type="button"
+                class="proc-mode-btn py-2 px-3 text-xs rounded-lg border border-indigo-500/50 bg-indigo-600/10 text-indigo-300 font-medium transition-all text-center"
                 data-proc-mode="ai-photo"
               >
-                AI Photo / Subject
+                AI Photo Mode
               </button>
               <button
-                class="proc-mode-btn p-2 text-xs rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-medium hover:border-indigo-500 transition-all"
+                type="button"
+                class="proc-mode-btn py-2 px-3 text-xs rounded-lg border border-transparent text-slate-400 font-medium hover:text-slate-200 transition-all text-center"
                 data-proc-mode="signature-doc"
               >
-                Signature / Text / Scan
+                Signature / Text
               </button>
             </div>
           </div>
 
-          <!-- Background Type -->
-          <div>
-            <label class="text-xs font-mono text-slate-400 block mb-2"
-              >BACKGROUND TYPE</label
-            >
-            <div class="grid grid-cols-3 gap-2">
+          <!-- Background Selection -->
+          <div class="space-y-3">
+            <label class="text-xs font-mono text-slate-400 block tracking-wider uppercase">
+              Background Style
+            </label>
+            
+            <div class="grid grid-cols-2 gap-2">
               <button
-                class="bg-mode-btn p-2 text-xs rounded-lg border border-indigo-500 bg-slate-800 text-indigo-400 font-medium"
-                data-mode="transparent">Transparent</button
+                type="button"
+                class="bg-mode-btn py-2 px-3 text-xs rounded-xl border border-indigo-500 bg-indigo-500/10 text-indigo-300 font-medium flex items-center justify-center gap-2 transition-all"
+                data-mode="transparent"
               >
+                <span class="w-3 h-3 rounded-full bg-slate-800 border border-slate-600 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:4px_4px]"></span>
+                Transparent
+              </button>
               <button
-                class="bg-mode-btn p-2 text-xs rounded-lg border border-slate-700 bg-slate-800 text-white hover:border-indigo-500"
-                data-mode="color">Color</button
+                type="button"
+                class="bg-mode-btn py-2 px-3 text-xs rounded-xl border border-slate-800 bg-slate-950 text-slate-400 font-medium hover:border-slate-700 flex items-center justify-center gap-2 transition-all"
+                data-mode="color"
               >
+                <span class="w-3 h-3 rounded-full bg-indigo-500"></span>
+                Solid Color
+              </button>
             </div>
-          </div>
 
-          <!-- Color Picker Input -->
-          <div id="color-picker-group" class="hidden space-y-2">
-            <label class="text-xs font-mono text-slate-400 block"
-              >SELECT COLOR</label
-            >
-            <input
-              type="color"
-              id="bg-color-picker"
-              value="#ffffff"
-              class="w-full h-10 rounded-lg cursor-pointer bg-slate-800 border border-slate-700 p-1"
-            />
+            <!-- Custom Color Panel (Toggled on "Solid Color" selection) -->
+            <div id="color-picker-group" class="hidden space-y-3 pt-2">
+              <!-- Swatches -->
+              <div class="flex items-center justify-between gap-1.5 p-2 bg-slate-950/60 rounded-xl border border-slate-800">
+                <button type="button" data-color="#ffffff" class="color-swatch w-7 h-7 rounded-lg bg-white border border-slate-300 hover:scale-105 transition-transform" title="White"></button>
+                <button type="button" data-color="#000000" class="color-swatch w-7 h-7 rounded-lg bg-black border border-slate-700 hover:scale-105 transition-transform" title="Black"></button>
+                <button type="button" data-color="#f8fafc" class="color-swatch w-7 h-7 rounded-lg bg-slate-50 border border-slate-300 hover:scale-105 transition-transform" title="Off-White"></button>
+                <button type="button" data-color="#64748b" class="color-swatch w-7 h-7 rounded-lg bg-slate-500 hover:scale-105 transition-transform" title="Studio Gray"></button>
+                <button type="button" data-color="#3b82f6" class="color-swatch w-7 h-7 rounded-lg bg-blue-500 hover:scale-105 transition-transform" title="Tech Blue"></button>
+                
+                <!-- Custom Color Trigger -->
+                <div class="relative w-7 h-7 rounded-lg overflow-hidden border border-slate-700 hover:scale-105 transition-transform cursor-pointer bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500" title="Custom Picker">
+                  <input
+                    type="color"
+                    id="bg-color-picker"
+                    value="#ffffff"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -185,9 +246,13 @@ import "../styles/global.css";
         <div class="mt-auto pt-4 border-t border-slate-800">
           <button
             id="download-btn"
+            type="button"
             disabled
-            class="w-full py-3 rounded-xl bg-slate-800 text-slate-500 font-semibold text-sm cursor-not-allowed transition-all"
+            class="w-full py-3 rounded-xl bg-slate-800 text-slate-500 font-semibold text-sm cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
             Download High-Res Image
           </button>
         </div>
@@ -200,22 +265,22 @@ import "../styles/global.css";
   import { CanvasEngine, type ProcessingMode, type BackgroundMode } from "../utils/canvasEngine";
 
   const dropZone = document.getElementById("drop-zone")!;
+  const dropOverlay = document.getElementById("drop-overlay")!;
   const fileInput = document.getElementById("file-input") as HTMLInputElement;
   const browseBtn = document.getElementById("browse-btn")!;
+  const replaceBtn = document.getElementById("replace-btn")!;
+  const resetBtn = document.getElementById("reset-btn")!;
+  
   const uploadState = document.getElementById("upload-state")!;
   const processingState = document.getElementById("processing-state")!;
   const canvasContainer = document.getElementById("canvas-container")!;
   const progressText = document.getElementById("progress-text")!;
-  const outputCanvas = document.getElementById(
-    "output-canvas"
-  ) as HTMLCanvasElement;
-  const downloadBtn = document.getElementById(
-    "download-btn"
-  ) as HTMLButtonElement;
+  const outputCanvas = document.getElementById("output-canvas") as HTMLCanvasElement;
+  const downloadBtn = document.getElementById("download-btn") as HTMLButtonElement;
+  
   const colorPickerGroup = document.getElementById("color-picker-group")!;
-  const bgColorPicker = document.getElementById(
-    "bg-color-picker"
-  ) as HTMLInputElement;
+  const bgColorPicker = document.getElementById("bg-color-picker") as HTMLInputElement;
+  const colorSwatches = document.querySelectorAll<HTMLButtonElement>(".color-swatch");
   
   const modeBtns = document.querySelectorAll<HTMLButtonElement>(".bg-mode-btn");
   const procBtns = document.querySelectorAll<HTMLButtonElement>(".proc-mode-btn");
@@ -225,12 +290,15 @@ import "../styles/global.css";
   let currentImageData: ImageData | null = null;
   let currentFile: File | null = null;
   let currentProcessingMode: ProcessingMode = 'ai-photo';
+  let isProcessingWorker = false;
 
   if (outputCanvas) {
     canvasEngine = new CanvasEngine(outputCanvas);
   }
 
   function initWorker() {
+    if (worker) return;
+
     worker = new Worker(
       new URL("../workers/segmentation.worker.ts", import.meta.url),
       { type: "module" }
@@ -240,37 +308,51 @@ import "../styles/global.css";
       const { type, progress, maskPixels, maskWidth, maskHeight, error, key } = e.data;
 
       if (type === "PROGRESS") {
-        progressText.innerText = `${key}... ${progress}%`;
+        if (progressText) progressText.innerText = `${key}... ${progress}%`;
       } else if (type === "SUCCESS" && maskPixels) {
+        isProcessingWorker = false;
         canvasEngine?.processAndApplyMask(maskPixels, maskWidth, maskHeight);
         finishProcessingUI();
       } else if (type === "ERROR") {
+        isProcessingWorker = false;
         alert(`Error: ${error}`);
         resetUI();
       }
     };
   }
 
+  // File triggers
   browseBtn?.addEventListener("click", () => fileInput?.click());
+  replaceBtn?.addEventListener("click", () => fileInput?.click());
 
   fileInput?.addEventListener("change", (e) => {
     const files = (e.target as HTMLInputElement).files;
     if (files?.length) processFile(files[0]);
   });
 
-  dropZone?.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    dropZone.classList.add("border-indigo-500");
+  // Drag and Drop Handling
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone?.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropOverlay.classList.remove("opacity-0", "pointer-events-none");
+    });
   });
 
-  dropZone?.addEventListener("dragleave", () =>
-    dropZone.classList.remove("border-indigo-500")
-  );
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone?.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropOverlay.classList.add("opacity-0", "pointer-events-none");
+    });
+  });
 
   dropZone?.addEventListener("drop", (e) => {
-    e.preventDefault();
-    dropZone.classList.remove("border-indigo-500");
     if (e.dataTransfer?.files.length) processFile(e.dataTransfer.files[0]);
+  });
+
+  resetBtn?.addEventListener("click", () => {
+    resetUI();
   });
 
   function processFile(file: File) {
@@ -278,6 +360,7 @@ import "../styles/global.css";
     currentFile = file;
 
     uploadState.classList.add("hidden");
+    canvasContainer.classList.add("hidden");
     processingState.classList.remove("hidden");
     processingState.classList.add("flex");
 
@@ -288,14 +371,17 @@ import "../styles/global.css";
       const offscreen = document.createElement("canvas");
       offscreen.width = img.naturalWidth;
       offscreen.height = img.naturalHeight;
-      const ctx = offscreen.getContext("2d")!;
+      const ctx = offscreen.getContext("2d", { willReadFrequently: true })!;
       ctx.drawImage(img, 0, 0);
 
       currentImageData = ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
       canvasEngine?.setOriginalImage(currentImageData);
 
-      executeProcessingPipeline();
+      // Reset file input so selecting the same file triggers change listener again
+      fileInput.value = "";
       URL.revokeObjectURL(url);
+
+      executeProcessingPipeline();
     };
 
     img.src = url;
@@ -305,15 +391,18 @@ import "../styles/global.css";
     if (!currentImageData) return;
 
     if (currentProcessingMode === 'signature-doc') {
-      // Instant Local Document & Signature Extraction Pass
-      progressText.innerText = 'Extracting Ink...';
+      if (progressText) progressText.innerText = 'Extracting Ink...';
       setTimeout(() => {
         canvasEngine?.extractSignatureOrText(25, 8, true);
         finishProcessingUI();
       }, 50);
     } else {
-      // ONNX AI Tensor Pass
-      if (!worker) initWorker();
+      if (isProcessingWorker) return;
+
+      initWorker();
+      isProcessingWorker = true;
+      if (progressText) progressText.innerText = 'Initializing AI Model...';
+
       worker?.postMessage({
         type: "PROCESS_IMAGE",
         imageData: currentImageData,
@@ -325,6 +414,7 @@ import "../styles/global.css";
     processingState.classList.add("hidden");
     processingState.classList.remove("flex");
     canvasContainer.classList.remove("hidden");
+    canvasContainer.classList.add("flex");
 
     downloadBtn.disabled = false;
     downloadBtn.classList.remove(
@@ -336,24 +426,38 @@ import "../styles/global.css";
       "bg-indigo-600",
       "hover:bg-indigo-500",
       "text-white",
-      "shadow-lg"
+      "shadow-lg",
+      "shadow-indigo-600/20"
     );
   }
 
-  // Handle Processing Mode Switcher (AI Photo vs Signature)
+  // Processing mode toggle buttons
   procBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (isProcessingWorker) return;
+
+      const newMode = btn.dataset.procMode as ProcessingMode;
+      if (newMode === currentProcessingMode) return;
+
       procBtns.forEach((b) => {
-        b.classList.remove("border-indigo-500", "text-indigo-400");
-        b.classList.add("border-slate-700", "text-slate-300");
+        b.classList.remove("border-indigo-500/50", "bg-indigo-600/10", "text-indigo-300");
+        b.classList.add("border-transparent", "text-slate-400");
       });
 
-      btn.classList.remove("border-slate-700", "text-slate-300");
-      btn.classList.add("border-indigo-500", "text-indigo-400");
+      btn.classList.remove("border-transparent", "text-slate-400");
+      btn.classList.add("border-indigo-500/50", "bg-indigo-600/10", "text-indigo-300");
 
-      currentProcessingMode = btn.dataset.procMode as ProcessingMode;
+      currentProcessingMode = newMode;
 
       if (currentImageData) {
+        // Fast-path: check if canvas engine already cached output for this mode
+        if (canvasEngine?.hasCachedMode(currentProcessingMode)) {
+          canvasEngine.switchMode(currentProcessingMode);
+          finishProcessingUI();
+          return;
+        }
+
+        // Run execution pipeline for uncached processing mode
         processingState.classList.remove("hidden");
         processingState.classList.add("flex");
         canvasContainer.classList.add("hidden");
@@ -362,17 +466,29 @@ import "../styles/global.css";
     });
   });
 
-  // Handle Background Mode Switcher
+  // Background style selection buttons
   modeBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
-      modeBtns.forEach((b) =>
-        b.classList.remove("border-indigo-500", "text-indigo-400")
-      );
-      btn.classList.add("border-indigo-500", "text-indigo-400");
+      modeBtns.forEach((b) => {
+        b.classList.remove("border-indigo-500", "bg-indigo-500/10", "text-indigo-300");
+        b.classList.add("border-slate-800", "bg-slate-950", "text-slate-400");
+      });
+
+      btn.classList.remove("border-slate-800", "bg-slate-950", "text-slate-400");
+      btn.classList.add("border-indigo-500", "bg-indigo-500/10", "text-indigo-300");
 
       const mode = btn.dataset.mode as BackgroundMode;
       colorPickerGroup.classList.toggle("hidden", mode !== "color");
       canvasEngine?.setBackground(mode, bgColorPicker.value);
+    });
+  });
+
+  // Color Swatch Selection
+  colorSwatches.forEach((swatch) => {
+    swatch.addEventListener("click", () => {
+      const color = swatch.dataset.color || "#ffffff";
+      bgColorPicker.value = color;
+      canvasEngine?.setBackground("color", color);
     });
   });
 
@@ -394,8 +510,17 @@ import "../styles/global.css";
   });
 
   function resetUI() {
+    currentImageData = null;
+    currentFile = null;
+    isProcessingWorker = false;
+    if (fileInput) fileInput.value = "";
+    
     uploadState.classList.remove("hidden");
     processingState.classList.add("hidden");
     canvasContainer.classList.add("hidden");
+
+    downloadBtn.disabled = true;
+    downloadBtn.classList.add("bg-slate-800", "text-slate-500", "cursor-not-allowed");
+    downloadBtn.classList.remove("bg-indigo-600", "hover:bg-indigo-500", "text-white", "shadow-lg");
   }
 </script>

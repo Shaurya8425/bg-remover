@@ -1,12 +1,24 @@
 export type ProcessingMode = 'ai-photo' | 'signature-doc';
 export type BackgroundMode = 'transparent' | 'color' | 'blur';
 
+interface CachedAiMask {
+  maskPixels: Uint8ClampedArray;
+  maskWidth: number;
+  maskHeight: number;
+}
+
 export class CanvasEngine {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private originalImageData: ImageData | null = null;
-  private processedCutoutData: ImageData | null = null;
 
+  // Cached cutouts for instant mode switching
+  private aiCutoutData: ImageData | null = null;
+  private signatureCutoutData: ImageData | null = null;
+  private cachedRawAiMask: CachedAiMask | null = null;
+
+  private currentCutoutData: ImageData | null = null;
+  private currentMode: ProcessingMode = 'ai-photo';
   private currentBgMode: BackgroundMode = 'transparent';
   private currentBgColor: string = '#ffffff';
 
@@ -19,71 +31,109 @@ export class CanvasEngine {
 
   public setOriginalImage(imgData: ImageData) {
     this.originalImageData = imgData;
-    this.processedCutoutData = null; // Reset cached cutout on new upload
+    
+    // Clear all mode caches when a new image is uploaded
+    this.aiCutoutData = null;
+    this.signatureCutoutData = null;
+    this.cachedRawAiMask = null;
+    this.currentCutoutData = null;
+
     this.canvas.width = imgData.width;
     this.canvas.height = imgData.height;
     this.ctx.putImageData(imgData, 0, 0);
   }
 
   /**
+   * Check if a mode already has a rendered cutout cached.
+   */
+  public hasCachedMode(mode: ProcessingMode): boolean {
+    if (mode === 'ai-photo') return this.aiCutoutData !== null;
+    if (mode === 'signature-doc') return this.signatureCutoutData !== null;
+    return false;
+  }
+
+  /**
+   * Instant mode switch using cached cutouts (no worker/re-processing required).
+   */
+  public switchMode(mode: ProcessingMode): boolean {
+    this.currentMode = mode;
+    if (mode === 'ai-photo' && this.aiCutoutData) {
+      this.currentCutoutData = this.aiCutoutData;
+      this.render();
+      return true;
+    }
+    if (mode === 'signature-doc' && this.signatureCutoutData) {
+      this.currentCutoutData = this.signatureCutoutData;
+      this.render();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Generic box blur via integral image.
+   */
+  private boxFilter(
+    src: Float32Array,
+    width: number,
+    height: number,
+    radius: number
+  ): Float32Array {
+    const N = width * height;
+    const dst = new Float32Array(N);
+    const stride = width + 1;
+    const integral = new Float32Array((width + 1) * (height + 1));
+
+    for (let y = 0; y < height; y++) {
+      let lineSum = 0;
+      for (let x = 0; x < width; x++) {
+        lineSum += src[y * width + x];
+        integral[(y + 1) * stride + (x + 1)] = integral[y * stride + (x + 1)] + lineSum;
+      }
+    }
+
+    for (let y = 0; y < height; y++) {
+      const y1 = Math.max(0, y - radius);
+      const y2 = Math.min(height - 1, y + radius);
+      for (let x = 0; x < width; x++) {
+        const x1 = Math.max(0, x - radius);
+        const x2 = Math.min(width - 1, x + radius);
+        const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+
+        const sum =
+          integral[(y2 + 1) * stride + (x2 + 1)] -
+          integral[y1 * stride + (x2 + 1)] -
+          integral[(y2 + 1) * stride + x1] +
+          integral[y1 * stride + x1];
+
+        dst[y * width + x] = sum / count;
+      }
+    }
+    return dst;
+  }
+
+  /**
    * Fast Guided Filter for client-side edge refinement.
-   * Uses high-res color boundaries from original ImageData to guide low-res alpha masks.
    */
   private applyGuidedFilter(
     guide: Uint8ClampedArray,
     alpha: Float32Array,
     width: number,
     height: number,
-    radius: number = 4,
-    eps: number = 1e-4
+    radius: number = 6,
+    eps: number = 2e-3
   ): Float32Array {
     const N = width * height;
     const result = new Float32Array(N);
 
-    // Convert guide image to grayscale luminance
     const I = new Float32Array(N);
     for (let i = 0; i < N; i++) {
       I[i] = (0.299 * guide[i * 4] + 0.587 * guide[i * 4 + 1] + 0.114 * guide[i * 4 + 2]) / 255.0;
     }
 
     const p = alpha;
-
-    // Box blur computation via integral images
-    const boxFilter = (src: Float32Array): Float32Array => {
-      const dst = new Float32Array(N);
-      const stride = width + 1;
-      const integral = new Float32Array((width + 1) * (height + 1));
-
-      for (let y = 0; y < height; y++) {
-        let lineSum = 0;
-        for (let x = 0; x < width; x++) {
-          lineSum += src[y * width + x];
-          integral[(y + 1) * stride + (x + 1)] = integral[y * stride + (x + 1)] + lineSum;
-        }
-      }
-
-      for (let y = 0; y < height; y++) {
-        const y1 = Math.max(0, y - radius);
-        const y2 = Math.min(height - 1, y + radius);
-        for (let x = 0; x < width; x++) {
-          const x1 = Math.max(0, x - radius);
-          const x2 = Math.min(width - 1, x + radius);
-          const count = (x2 - x1 + 1) * (y2 - y1 + 1);
-
-          const sum =
-            integral[(y2 + 1) * stride + (x2 + 1)] -
-            integral[y1 * stride + (x2 + 1)] -
-            integral[(y2 + 1) * stride + x1] +
-            integral[y1 * stride + x1];
-
-          dst[y * width + x] = sum / count;
-        }
-      }
-      return dst;
-    };
-
-    const meanI = boxFilter(I);
-    const meanP = boxFilter(p);
+    const meanI = this.boxFilter(I, width, height, radius);
+    const meanP = this.boxFilter(p, width, height, radius);
 
     const Ip = new Float32Array(N);
     const II = new Float32Array(N);
@@ -92,8 +142,8 @@ export class CanvasEngine {
       II[i] = I[i] * I[i];
     }
 
-    const meanIp = boxFilter(Ip);
-    const meanII = boxFilter(II);
+    const meanIp = this.boxFilter(Ip, width, height, radius);
+    const meanII = this.boxFilter(II, width, height, radius);
 
     const varI = new Float32Array(N);
     const covIp = new Float32Array(N);
@@ -109,17 +159,12 @@ export class CanvasEngine {
       b[i] = meanP[i] - a[i] * meanI[i];
     }
 
-    const meanA = boxFilter(a);
-    const meanB = boxFilter(b);
+    const meanA = this.boxFilter(a, width, height, radius);
+    const meanB = this.boxFilter(b, width, height, radius);
 
     for (let i = 0; i < N; i++) {
       let q = meanA[i] * I[i] + meanB[i];
-      
-      // Guard against NaN values that cause missing pixel holes
-      if (Number.isNaN(q)) {
-        q = p[i];
-      }
-      
+      if (Number.isNaN(q)) q = p[i];
       result[i] = Math.max(0, Math.min(1, q));
     }
 
@@ -138,17 +183,18 @@ export class CanvasEngine {
   ) {
     if (!this.originalImageData) return;
 
+    // Cache raw prediction mask
+    this.cachedRawAiMask = { maskPixels, maskWidth, maskHeight };
+
     const origWidth = this.originalImageData.width;
     const origHeight = this.originalImageData.height;
 
-    // 1. Scaled Mask Canvas to Match Full Resolution
     const maskCanvas = new OffscreenCanvas(maskWidth, maskHeight);
     const maskCtx = maskCanvas.getContext('2d')!;
     const maskImgData = maskCtx.createImageData(maskWidth, maskHeight);
     maskImgData.data.set(maskPixels);
     maskCtx.putImageData(maskImgData, 0, 0);
 
-    // 2. High-Res Canvas Context Interpolation
     const scaledMaskCanvas = new OffscreenCanvas(origWidth, origHeight);
     const scaledMaskCtx = scaledMaskCanvas.getContext('2d')!;
     scaledMaskCtx.imageSmoothingEnabled = true;
@@ -158,63 +204,117 @@ export class CanvasEngine {
     const scaledMaskData = scaledMaskCtx.getImageData(0, 0, origWidth, origHeight);
     const maskBytes = scaledMaskData.data;
 
-    // 3. Extract raw float alpha array from scaled mask
     const totalPixels = origWidth * origHeight;
     const rawAlphaArray = new Float32Array(totalPixels);
     for (let i = 0; i < totalPixels; i++) {
       rawAlphaArray[i] = maskBytes[i * 4 + 3] / 255.0;
     }
 
-    // 4. Run Guided Filter using original image RGB high-res details as guide
     const refinedAlpha = this.applyGuidedFilter(
       this.originalImageData.data,
       rawAlphaArray,
       origWidth,
       origHeight,
-      3,    // Search radius
-      1e-3  // Regularization parameter
+      6,
+      2e-3
     );
 
-    // 5. Compositing
+    const halfBand = 1 / (edgeSharpness * 2);
+    const lower = Math.max(0, edgeThreshold - halfBand);
+    const upper = Math.min(1, edgeThreshold + halfBand);
+
+    const smoothstep = (edge0: number, edge1: number, x: number): number => {
+      if (edge1 <= edge0) return x < edge0 ? 0 : 1;
+      const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+      return t * t * (3 - 2 * t);
+    };
+
+    const shapedAlpha = new Float32Array(totalPixels);
+    for (let i = 0; i < totalPixels; i++) {
+      let alphaVal = refinedAlpha[i];
+      if (Number.isNaN(alphaVal)) alphaVal = rawAlphaArray[i];
+
+      if (alphaVal <= lower) shapedAlpha[i] = 0;
+      else if (alphaVal >= upper) shapedAlpha[i] = 1;
+      else shapedAlpha[i] = smoothstep(lower, upper, alphaVal);
+    }
+
+    const featheredAlpha = this.boxFilter(shapedAlpha, origWidth, origHeight, 1);
+
     const finalImageData = this.ctx.createImageData(origWidth, origHeight);
     const origBytes = this.originalImageData.data;
     const outputBytes = finalImageData.data;
 
-    for (let i = 0; i < totalPixels; i++) {
-      const idx = i * 4;
+    const OPAQUE_THRESHOLD = 0.98;
+    const DECONTAM_WINDOW = 2;
 
-      outputBytes[idx] = origBytes[idx];         // Red
-      outputBytes[idx + 1] = origBytes[idx + 1]; // Green
-      outputBytes[idx + 2] = origBytes[idx + 2]; // Blue
+    for (let y = 0; y < origHeight; y++) {
+      for (let x = 0; x < origWidth; x++) {
+        const i = y * origWidth + x;
+        const idx = i * 4;
+        const a = Math.max(0, Math.min(1, featheredAlpha[i]));
 
-      let alphaVal = refinedAlpha[i];
+        if (a <= 0) {
+          outputBytes[idx + 3] = 0;
+          continue;
+        }
 
-      if (Number.isNaN(alphaVal)) {
-        alphaVal = rawAlphaArray[i];
+        if (a >= OPAQUE_THRESHOLD) {
+          outputBytes[idx] = origBytes[idx];
+          outputBytes[idx + 1] = origBytes[idx + 1];
+          outputBytes[idx + 2] = origBytes[idx + 2];
+          outputBytes[idx + 3] = 255;
+          continue;
+        }
+
+        let rSum = 0, gSum = 0, bSum = 0, count = 0;
+        for (let dy = -DECONTAM_WINDOW; dy <= DECONTAM_WINDOW; dy++) {
+          const ny = y + dy;
+          if (ny < 0 || ny >= origHeight) continue;
+          for (let dx = -DECONTAM_WINDOW; dx <= DECONTAM_WINDOW; dx++) {
+            const nx = x + dx;
+            if (nx < 0 || nx >= origWidth) continue;
+            const ni = ny * origWidth + nx;
+            if (featheredAlpha[ni] >= OPAQUE_THRESHOLD) {
+              const nidx = ni * 4;
+              rSum += origBytes[nidx];
+              gSum += origBytes[nidx + 1];
+              bSum += origBytes[nidx + 2];
+              count++;
+            }
+          }
+        }
+
+        if (count > 0) {
+          const fgR = rSum / count;
+          const fgG = gSum / count;
+          const fgB = bSum / count;
+          outputBytes[idx] = origBytes[idx] * a + fgR * (1 - a);
+          outputBytes[idx + 1] = origBytes[idx + 1] * a + fgG * (1 - a);
+          outputBytes[idx + 2] = origBytes[idx + 2] * a + fgB * (1 - a);
+        } else {
+          outputBytes[idx] = origBytes[idx];
+          outputBytes[idx + 1] = origBytes[idx + 1];
+          outputBytes[idx + 2] = origBytes[idx + 2];
+        }
+
+        outputBytes[idx + 3] = Math.round(a * 255);
       }
-
-      // Soft thresholding to prevent punching holes inside the document body
-      if (alphaVal < 0.02) {
-        alphaVal = 0;
-      } else if (alphaVal > 0.85) {
-        alphaVal = 1;
-      }
-
-      outputBytes[idx + 3] = Math.round(alphaVal * 255);
     }
 
-    // Cache processed foreground cutout
-    this.processedCutoutData = finalImageData;
+    // Store in AI cutout cache & set current
+    this.aiCutoutData = finalImageData;
+    this.currentCutoutData = finalImageData;
+    this.currentMode = 'ai-photo';
     this.render();
   }
 
   /**
    * Mode 2: Robust Adaptive Neighborhood Binarization
-   * Works on low-contrast pencil/ink, uneven paper shadows, and dim lighting.
    */
   public extractSignatureOrText(
-    windowSize: number = 25,     // Neighborhood window size in pixels
-    offset: number = 8,          // Luminance difference required to identify ink
+    windowSize: number = 25,
+    offset: number = 8,
     preserveOriginalColor: boolean = true
   ) {
     if (!this.originalImageData) return;
@@ -226,13 +326,11 @@ export class CanvasEngine {
     const finalImageData = this.ctx.createImageData(width, height);
     const out = finalImageData.data;
 
-    // 1. Convert image to grayscale Float32 array
     const gray = new Float32Array(width * height);
     for (let i = 0; i < d.length; i += 4) {
       gray[i / 4] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
     }
 
-    // 2. Build 2D Integral Image for fast O(1) area sums
     const stride = width + 1;
     const integral = new Float32Array((width + 1) * (height + 1));
 
@@ -247,7 +345,6 @@ export class CanvasEngine {
 
     const halfWin = Math.floor(windowSize / 2);
 
-    // 3. Evaluate each pixel relative to its surrounding paper context
     for (let y = 0; y < height; y++) {
       const y1 = Math.max(0, y - halfWin);
       const y2 = Math.min(height - 1, y + halfWin);
@@ -258,7 +355,6 @@ export class CanvasEngine {
 
         const area = (x2 - x1 + 1) * (y2 - y1 + 1);
 
-        // Fast sum query from integral table
         const sum =
           integral[(y2 + 1) * stride + (x2 + 1)] -
           integral[y1 * stride + (x2 + 1)] -
@@ -270,25 +366,27 @@ export class CanvasEngine {
         const idx = pixelIdx * 4;
         const currentVal = gray[pixelIdx];
 
-        // Pixel is ink if it is darker than the surrounding paper average by the offset
         if (localMean - currentVal > offset) {
           if (preserveOriginalColor) {
-            out[idx] = d[idx];         // Red
-            out[idx + 1] = d[idx + 1]; // Green
-            out[idx + 2] = d[idx + 2]; // Blue
+            out[idx] = d[idx];
+            out[idx + 1] = d[idx + 1];
+            out[idx + 2] = d[idx + 2];
           } else {
             out[idx] = 20;
             out[idx + 1] = 20;
             out[idx + 2] = 20;
           }
-          out[idx + 3] = 255; // Keep Ink Stroke
+          out[idx + 3] = 255;
         } else {
-          out[idx + 3] = 0;   // Transparent Background
+          out[idx + 3] = 0;
         }
       }
     }
 
-    this.processedCutoutData = finalImageData;
+    // Store in Signature cutout cache & set current
+    this.signatureCutoutData = finalImageData;
+    this.currentCutoutData = finalImageData;
+    this.currentMode = 'signature-doc';
     this.render();
   }
 
@@ -305,23 +403,21 @@ export class CanvasEngine {
    * Final Canvas Composition Renderer
    */
   public render() {
-    if (!this.processedCutoutData) return;
+    if (!this.currentCutoutData) return;
 
     const width = this.canvas.width;
     const height = this.canvas.height;
 
     this.ctx.clearRect(0, 0, width, height);
 
-    // Render background layer
     if (this.currentBgMode === 'color') {
       this.ctx.fillStyle = this.currentBgColor;
       this.ctx.fillRect(0, 0, width, height);
     }
 
-    // Composite foreground cutout over background
     const tempCanvas = new OffscreenCanvas(width, height);
     const tempCtx = tempCanvas.getContext('2d')!;
-    tempCtx.putImageData(this.processedCutoutData, 0, 0);
+    tempCtx.putImageData(this.currentCutoutData, 0, 0);
 
     this.ctx.drawImage(tempCanvas, 0, 0);
   }
