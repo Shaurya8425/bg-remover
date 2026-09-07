@@ -10,16 +10,17 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.0.0",
+    "@tailwindcss/vite": "^4.3.3",
     "astro": "^5.0.0",
     "onnxruntime-web": "^1.29.0",
-    "tailwindcss": "^4.0.0"
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vite-plugin-static-copy": "^4.1.1"
   },
   "overrides": {
-  "vite": "$vite"
-}
+    "vite": "$vite"
+  }
 }

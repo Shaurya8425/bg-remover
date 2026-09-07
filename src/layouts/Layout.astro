@@ -14,7 +14,14 @@ const { title, description } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
+
+    <!-- Favicon & PWA Metadata -->
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="SnapErase" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Service Worker Registration -->
     <script>
@@ -34,17 +41,53 @@ const { title, description } = Astro.props;
       <div
         class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between"
       >
-        <a href="/" class="flex items-center gap-2">
+        <!-- Brand Logo -->
+        <a href="/" class="flex items-center gap-3 group">
           <div
-            class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white"
+            class="h-9 w-9 flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
           >
-            AI
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 512 512"
+              class="w-full h-full"
+            >
+              <rect x="0" y="0" width="512" height="512" rx="112" fill="#4f46e5"
+              ></rect>
+              <line
+                x1="120"
+                y1="392"
+                x2="310"
+                y2="202"
+                stroke="#ffffff"
+                stroke-width="56"
+                stroke-linecap="round"></line>
+              <line
+                x1="270"
+                y1="242"
+                x2="310"
+                y2="202"
+                stroke="#38bdf8"
+                stroke-width="56"
+                stroke-linecap="round"></line>
+              <path
+                d="M 370 70 C 370 115, 385 130, 430 130 C 385 130, 370 145, 370 190 C 370 145, 355 130, 310 130 C 355 130, 370 115, 370 70 Z"
+                fill="#38bdf8"></path>
+              <path
+                d="M 170 110 C 170 130, 180 140, 200 140 C 180 140, 170 150, 170 170 C 170 150, 160 140, 140 140 C 160 140, 170 130, 170 110 Z"
+                fill="#ffffff"></path>
+            </svg>
           </div>
-          <span class="font-semibold text-lg tracking-tight">SnapErase</span>
+          <span class="font-bold text-xl tracking-tight text-white"
+            >SnapErase</span
+          >
         </a>
+
+        <!-- Status Badge -->
         <div
-          class="text-xs font-mono bg-slate-800 text-indigo-400 px-2.5 py-1 rounded-full border border-slate-700"
+          class="text-xs font-mono bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/20 flex items-center gap-1.5"
         >
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"
+          ></span>
           100% Client-Side
         </div>
       </div>

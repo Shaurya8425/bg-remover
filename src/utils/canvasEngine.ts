@@ -1,5 +1,5 @@
-export type ProcessingMode = 'ai-photo' | 'signature-doc';
-export type BackgroundMode = 'transparent' | 'color' | 'blur';
+export type ProcessingMode = "ai-photo" | "signature-doc";
+export type BackgroundMode = "transparent" | "color" | "blur";
 
 interface CachedAiMask {
   maskPixels: Uint8ClampedArray;
@@ -18,20 +18,20 @@ export class CanvasEngine {
   private cachedRawAiMask: CachedAiMask | null = null;
 
   private currentCutoutData: ImageData | null = null;
-  private currentMode: ProcessingMode = 'ai-photo';
-  private currentBgMode: BackgroundMode = 'transparent';
-  private currentBgColor: string = '#ffffff';
+  private currentMode: ProcessingMode = "ai-photo";
+  private currentBgMode: BackgroundMode = "transparent";
+  private currentBgColor: string = "#ffffff";
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    const context = canvas.getContext('2d', { willReadFrequently: true });
-    if (!context) throw new Error('Could not acquire 2D canvas context.');
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("Could not acquire 2D canvas context.");
     this.ctx = context;
   }
 
   public setOriginalImage(imgData: ImageData) {
     this.originalImageData = imgData;
-    
+
     // Clear all mode caches when a new image is uploaded
     this.aiCutoutData = null;
     this.signatureCutoutData = null;
@@ -47,8 +47,8 @@ export class CanvasEngine {
    * Check if a mode already has a rendered cutout cached.
    */
   public hasCachedMode(mode: ProcessingMode): boolean {
-    if (mode === 'ai-photo') return this.aiCutoutData !== null;
-    if (mode === 'signature-doc') return this.signatureCutoutData !== null;
+    if (mode === "ai-photo") return this.aiCutoutData !== null;
+    if (mode === "signature-doc") return this.signatureCutoutData !== null;
     return false;
   }
 
@@ -57,12 +57,12 @@ export class CanvasEngine {
    */
   public switchMode(mode: ProcessingMode): boolean {
     this.currentMode = mode;
-    if (mode === 'ai-photo' && this.aiCutoutData) {
+    if (mode === "ai-photo" && this.aiCutoutData) {
       this.currentCutoutData = this.aiCutoutData;
       this.render();
       return true;
     }
-    if (mode === 'signature-doc' && this.signatureCutoutData) {
+    if (mode === "signature-doc" && this.signatureCutoutData) {
       this.currentCutoutData = this.signatureCutoutData;
       this.render();
       return true;
@@ -77,7 +77,7 @@ export class CanvasEngine {
     src: Float32Array,
     width: number,
     height: number,
-    radius: number
+    radius: number,
   ): Float32Array {
     const N = width * height;
     const dst = new Float32Array(N);
@@ -88,7 +88,8 @@ export class CanvasEngine {
       let lineSum = 0;
       for (let x = 0; x < width; x++) {
         lineSum += src[y * width + x];
-        integral[(y + 1) * stride + (x + 1)] = integral[y * stride + (x + 1)] + lineSum;
+        integral[(y + 1) * stride + (x + 1)] =
+          integral[y * stride + (x + 1)] + lineSum;
       }
     }
 
@@ -121,14 +122,18 @@ export class CanvasEngine {
     width: number,
     height: number,
     radius: number = 6,
-    eps: number = 2e-3
+    eps: number = 2e-3,
   ): Float32Array {
     const N = width * height;
     const result = new Float32Array(N);
 
     const I = new Float32Array(N);
     for (let i = 0; i < N; i++) {
-      I[i] = (0.299 * guide[i * 4] + 0.587 * guide[i * 4 + 1] + 0.114 * guide[i * 4 + 2]) / 255.0;
+      I[i] =
+        (0.299 * guide[i * 4] +
+          0.587 * guide[i * 4 + 1] +
+          0.114 * guide[i * 4 + 2]) /
+        255.0;
     }
 
     const p = alpha;
@@ -172,14 +177,16 @@ export class CanvasEngine {
   }
 
   /**
-   * MODE 1: Refined AI Cutout Processing using Edge-Aware Guided Filtering
+   * MODE 1: Refined AI Cutout Processing matched to shaurya7084/bg-removal-onnx
    */
   public processAndApplyMask(
     maskPixels: Uint8ClampedArray,
     maskWidth: number,
     maskHeight: number,
     edgeThreshold: number = 0.5,
-    edgeSharpness: number = 4.0
+    edgeSharpness: number = 1.2, // Reduced from 4.0 to prevent hard contrast clipping
+    filterRadius: number = 3, // Reduced from 6 for localized edge snapping
+    filterEps: number = 1e-2, // Increased from 2e-3 to trust raw model predictions more
   ) {
     if (!this.originalImageData) return;
 
@@ -189,19 +196,25 @@ export class CanvasEngine {
     const origWidth = this.originalImageData.width;
     const origHeight = this.originalImageData.height;
 
+    // 1. Rescale mask to canvas dimensions
     const maskCanvas = new OffscreenCanvas(maskWidth, maskHeight);
-    const maskCtx = maskCanvas.getContext('2d')!;
+    const maskCtx = maskCanvas.getContext("2d")!;
     const maskImgData = maskCtx.createImageData(maskWidth, maskHeight);
     maskImgData.data.set(maskPixels);
     maskCtx.putImageData(maskImgData, 0, 0);
 
     const scaledMaskCanvas = new OffscreenCanvas(origWidth, origHeight);
-    const scaledMaskCtx = scaledMaskCanvas.getContext('2d')!;
+    const scaledMaskCtx = scaledMaskCanvas.getContext("2d")!;
     scaledMaskCtx.imageSmoothingEnabled = true;
-    scaledMaskCtx.imageSmoothingQuality = 'high';
+    scaledMaskCtx.imageSmoothingQuality = "high";
     scaledMaskCtx.drawImage(maskCanvas, 0, 0, origWidth, origHeight);
 
-    const scaledMaskData = scaledMaskCtx.getImageData(0, 0, origWidth, origHeight);
+    const scaledMaskData = scaledMaskCtx.getImageData(
+      0,
+      0,
+      origWidth,
+      origHeight,
+    );
     const maskBytes = scaledMaskData.data;
 
     const totalPixels = origWidth * origHeight;
@@ -210,15 +223,17 @@ export class CanvasEngine {
       rawAlphaArray[i] = maskBytes[i * 4 + 3] / 255.0;
     }
 
+    // 2. Apply Guided Filter with refined neighborhood parameters
     const refinedAlpha = this.applyGuidedFilter(
       this.originalImageData.data,
       rawAlphaArray,
       origWidth,
       origHeight,
-      6,
-      2e-3
+      filterRadius,
+      filterEps,
     );
 
+    // 3. Smoothstep alpha mapping
     const halfBand = 1 / (edgeSharpness * 2);
     const lower = Math.max(0, edgeThreshold - halfBand);
     const upper = Math.min(1, edgeThreshold + halfBand);
@@ -239,7 +254,13 @@ export class CanvasEngine {
       else shapedAlpha[i] = smoothstep(lower, upper, alphaVal);
     }
 
-    const featheredAlpha = this.boxFilter(shapedAlpha, origWidth, origHeight, 1);
+    // 4. Subtle box filter feathering
+    const featheredAlpha = this.boxFilter(
+      shapedAlpha,
+      origWidth,
+      origHeight,
+      1,
+    );
 
     const finalImageData = this.ctx.createImageData(origWidth, origHeight);
     const origBytes = this.originalImageData.data;
@@ -267,7 +288,11 @@ export class CanvasEngine {
           continue;
         }
 
-        let rSum = 0, gSum = 0, bSum = 0, count = 0;
+        // Color decontamination for semi-transparent border pixels
+        let rSum = 0,
+          gSum = 0,
+          bSum = 0,
+          count = 0;
         for (let dy = -DECONTAM_WINDOW; dy <= DECONTAM_WINDOW; dy++) {
           const ny = y + dy;
           if (ny < 0 || ny >= origHeight) continue;
@@ -302,10 +327,9 @@ export class CanvasEngine {
       }
     }
 
-    // Store in AI cutout cache & set current
     this.aiCutoutData = finalImageData;
     this.currentCutoutData = finalImageData;
-    this.currentMode = 'ai-photo';
+    this.currentMode = "ai-photo";
     this.render();
   }
 
@@ -315,7 +339,7 @@ export class CanvasEngine {
   public extractSignatureOrText(
     windowSize: number = 25,
     offset: number = 8,
-    preserveOriginalColor: boolean = true
+    preserveOriginalColor: boolean = true,
   ) {
     if (!this.originalImageData) return;
 
@@ -386,14 +410,14 @@ export class CanvasEngine {
     // Store in Signature cutout cache & set current
     this.signatureCutoutData = finalImageData;
     this.currentCutoutData = finalImageData;
-    this.currentMode = 'signature-doc';
+    this.currentMode = "signature-doc";
     this.render();
   }
 
   /**
    * Background Layer Switcher (Transparent / Solid Color)
    */
-  public setBackground(mode: BackgroundMode, color: string = '#ffffff') {
+  public setBackground(mode: BackgroundMode, color: string = "#ffffff") {
     this.currentBgMode = mode;
     this.currentBgColor = color;
     this.render();
@@ -410,19 +434,19 @@ export class CanvasEngine {
 
     this.ctx.clearRect(0, 0, width, height);
 
-    if (this.currentBgMode === 'color') {
+    if (this.currentBgMode === "color") {
       this.ctx.fillStyle = this.currentBgColor;
       this.ctx.fillRect(0, 0, width, height);
     }
 
     const tempCanvas = new OffscreenCanvas(width, height);
-    const tempCtx = tempCanvas.getContext('2d')!;
+    const tempCtx = tempCanvas.getContext("2d")!;
     tempCtx.putImageData(this.currentCutoutData, 0, 0);
 
     this.ctx.drawImage(tempCanvas, 0, 0);
   }
 
   public exportPNG(): string {
-    return this.canvas.toDataURL('image/png', 1.0);
+    return this.canvas.toDataURL("image/png", 1.0);
   }
 }

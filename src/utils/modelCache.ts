@@ -25,27 +25,36 @@ export class ModelCache {
     });
   }
 
-  public async getAsset(url: string): Promise<ArrayBuffer | null> {
+  public async get(key: string): Promise<ArrayBuffer | null> {
     const db = await this.dbPromise;
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
-      const request = store.get(url);
+      const request = store.get(key);
 
       request.onsuccess = () => resolve(request.result || null);
       request.onerror = () => resolve(null);
     });
   }
 
-  public async setAsset(url: string, buffer: ArrayBuffer): Promise<void> {
+  public async set(key: string, buffer: ArrayBuffer): Promise<void> {
     const db = await this.dbPromise;
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
-      const request = store.put(buffer, url);
+      const request = store.put(buffer, key);
 
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
+  }
+
+  // Alias methods for backwards compatibility
+  public getAsset(key: string): Promise<ArrayBuffer | null> {
+    return this.get(key);
+  }
+
+  public setAsset(key: string, buffer: ArrayBuffer): Promise<void> {
+    return this.set(key, buffer);
   }
 }
