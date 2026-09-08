@@ -9,6 +9,8 @@ const pages = defineCollection({
     targetKeyword: z.string(),
     heroHeading: z.string(),
     heroSubheading: z.string(),
+    ogImage: z.string().optional().default('/og-image.png'),
+    canonicalURL: z.string().optional(),
     defaultBgMode: z.enum(['transparent', 'color', 'blur', 'image']).default('transparent'),
     defaultColor: z.string().optional(),
     useCases: z.array(

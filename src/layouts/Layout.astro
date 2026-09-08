@@ -2,9 +2,41 @@
 interface Props {
   title: string;
   description: string;
+  image?: string;
+  canonicalURL?: string;
+  schema?: Record<string, any> | Record<string, any>[];
 }
 
-const { title, description } = Astro.props;
+const {
+  title,
+  description,
+  image = '/og-image.png', // Ensure you put a default 1200x630 image at public/og-image.png
+  canonicalURL = new URL(Astro.url.pathname, Astro.site || Astro.url.origin).href,
+  schema,
+} = Astro.props;
+
+const siteName = 'SnapErase';
+
+// Default Schema.org metadata for your tool
+const defaultSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  'name': siteName,
+  'operatingSystem': 'All',
+  'applicationCategory': 'MultimediaApplication',
+  'offers': {
+    '@type': 'Offer',
+    'price': '0',
+    'priceCurrency': 'USD',
+  },
+  'description': description,
+};
+
+const combinedSchema = schema
+  ? Array.isArray(schema)
+    ? [defaultSchema, ...schema]
+    : [defaultSchema, schema]
+  : [defaultSchema];
 ---
 
 <!doctype html>
@@ -12,8 +44,27 @@ const { title, description } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Primary Meta Tags -->
     <title>{title}</title>
+    <meta name="title" content={title} />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(image, Astro.url.origin).href} />
+    <meta property="og:site_name" content={siteName} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={new URL(image, Astro.url.origin).href} />
 
     <!-- Favicon & PWA Metadata -->
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
@@ -22,6 +73,9 @@ const { title, description } = Astro.props;
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="SnapErase" />
     <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- JSON-LD Structured Data Injection -->
+    <script type="application/ld+json" set:html={JSON.stringify(combinedSchema)} />
 
     <!-- Service Worker Registration -->
     <script>

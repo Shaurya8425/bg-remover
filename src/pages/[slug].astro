@@ -1,11 +1,13 @@
 ---
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
+import DropZone from '../components/DropZone.astro';
+import ControlPanel from '../components/ControlPanel.astro';
 
 export async function getStaticPaths() {
   const pages = await getCollection('pages');
   return pages.map((page) => ({
-    params: { slug: page.id }, // Astro v5 uses page.id for glob loaders
+    params: { slug: page.id },
     props: { page },
   }));
 }
@@ -18,7 +20,6 @@ const { page } = Astro.props;
 const { data } = page;
 const { Content } = await render(page);
 
-// JSON-LD Schema for Google Search
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -34,7 +35,6 @@ const faqSchema = {
 ---
 
 <Layout title={data.title} description={data.metaDescription}>
-  <!-- Schema Injection -->
   <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
@@ -46,39 +46,8 @@ const faqSchema = {
 
     <!-- Drop Zone & Canvas Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="lg:col-span-2 border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-6 bg-slate-900/30 flex flex-col items-center justify-center min-h-[400px]" id="drop-zone">
-        <div id="upload-state" class="flex flex-col items-center gap-4 text-center">
-          <div class="p-4 rounded-full bg-slate-800 text-indigo-400">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-          </div>
-          <p class="font-medium text-slate-200">Upload photo for {data.targetKeyword}</p>
-          <input type="file" id="file-input" accept="image/*" class="hidden" />
-          <button id="browse-btn" class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-500 transition-all">
-            Select Photo
-          </button>
-        </div>
-
-        <div id="processing-state" class="hidden flex-col items-center gap-3">
-          <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <p id="progress-text" class="text-sm font-mono text-indigo-400">Processing locally...</p>
-        </div>
-
-        <div id="canvas-container" class="hidden relative w-full h-full flex items-center justify-center">
-          <canvas id="output-canvas" class="max-w-full max-h-[500px] object-contain rounded-lg shadow-2xl"></canvas>
-        </div>
-      </div>
-
-      <!-- Controls Presets -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-6">
-        <h2 class="text-base font-semibold text-slate-200 border-b border-slate-800 pb-3">Presets</h2>
-        <div class="space-y-3 text-sm text-slate-300">
-          <p>Default Preset: <span class="font-mono text-indigo-400 capitalize">{data.defaultBgMode}</span></p>
-          {data.defaultColor && <p>Color: <span class="font-mono text-indigo-400">{data.defaultColor}</span></p>}
-        </div>
-        <button id="download-btn" disabled class="mt-auto w-full py-3 rounded-xl bg-slate-800 text-slate-500 font-semibold text-sm cursor-not-allowed">
-          Download Cutout
-        </button>
-      </div>
+      <DropZone targetKeyword={data.targetKeyword} />
+      <ControlPanel defaultMode={data.defaultBgMode} defaultColor={data.defaultColor} />
     </div>
 
     <!-- Article Content -->
@@ -113,3 +82,14 @@ const faqSchema = {
     </section>
   </main>
 </Layout>
+
+<script data-default-mode={data.defaultBgMode} data-default-color={data.defaultColor}>
+  import { initWorkspace } from "../utils/workspace";
+
+  // Read page content preset configurations from Astro script tag dataset attributes
+  const currentScript = document.querySelector('script[data-default-mode]');
+  const defaultBgMode = currentScript?.getAttribute('data-default-mode') || 'transparent';
+  const defaultColor = currentScript?.getAttribute('data-default-color') || '#ffffff';
+
+  initWorkspace({ defaultBgMode, defaultColor });
+</script>
