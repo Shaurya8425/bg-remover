@@ -1,0 +1,84 @@
+---
+// src/components/FaqAccordion.astro
+
+export interface FAQItem {
+  q: string;
+  a: string;
+}
+
+// 6 Core high-intent FAQs optimal for SEO and AI Overviews
+const defaultFaqs: FAQItem[] = [
+  {
+    q: "What is the best free background remover?",
+    a: "SnapErase is a free background remover that runs high-precision AI models directly inside your browser. It provides unlimited background removal with zero watermarks, hidden fees, or account sign-ups."
+  },
+  {
+    q: "How do I remove the background from an image online?",
+    a: "Drag and drop your photo into the workspace. Our automatic background remover detects the subject using computer vision, masks out the backdrop, and allows you to download a transparent PNG in seconds."
+  },
+  {
+    q: "Is this image background remover private and safe to use?",
+    a: "Yes. Unlike other tools that upload your files to external cloud servers, SnapErase uses WebAssembly and ONNX Runtime to process your photos 100% locally on your device. Your photos never leave your browser."
+  },
+  {
+    q: "How can I change my photo background to white?",
+    a: "After uploading your image to our background remover, use the control panel to toggle the background layer to solid white. This is ideal for e-commerce listings on Amazon, Shopify, or eBay."
+  },
+  {
+    q: "How to make a picture background transparent?",
+    a: "Upload your JPG, PNG, or WEBP file to the tool. The AI strips away the background pixels and exports your isolated image as an Alpha-channel transparent PNG cutout."
+  },
+  {
+    q: "Can I remove background on mobile devices?",
+    a: "Yes! SnapErase is a browser-native application that works smoothly on mobile Safari and Chrome across iOS and Android devices without requiring any app store installation."
+  }
+];
+
+const { faqs = defaultFaqs } = Astro.props;
+
+// Schema.org FAQPage JSON-LD Array
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqs.map((faq: FAQItem) => ({
+    "@type": "Question",
+    "name": faq.q,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": `<p>${faq.a}</p>`
+    }
+  }))
+};
+---
+
+<!-- Schema.org Structured Data Injection -->
+<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+
+<section class="border-t border-slate-800/80 pt-12 max-w-4xl mx-auto w-full space-y-6">
+  <div class="text-center space-y-2">
+    <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+      Frequently Asked Questions
+    </h2>
+    <p class="text-slate-400 text-sm">
+      Everything you need to know about our browser-native AI background remover.
+    </p>
+  </div>
+
+  <div class="space-y-3">
+    {faqs.map((faq: FAQItem) => (
+      <details class="group bg-slate-900/50 border border-slate-800/80 rounded-xl overflow-hidden transition-colors duration-150 hover:border-slate-700">
+        <summary class="flex justify-between items-center w-full p-4 sm:p-5 text-left text-sm sm:text-base font-semibold text-indigo-200 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+          <span>{faq.q}</span>
+          <span class="ml-4 flex-shrink-0 transition-transform duration-200 group-open:rotate-180 text-indigo-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </span>
+        </summary>
+        <div class="px-4 pb-4 sm:px-5 sm:pb-5 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-slate-800/40 pt-3">
+          <p>{faq.a}</p>
+        </div>
+      </details>
+    ))}
+  </div>
+</section>

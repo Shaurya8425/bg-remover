@@ -1,4 +1,5 @@
 ---
+// src/layouts/Layout.astro
 interface Props {
   title: string;
   description: string;
@@ -7,29 +8,38 @@ interface Props {
   schema?: Record<string, any> | Record<string, any>[];
 }
 
-const {
-  title,
-  description,
-  image = '/og-image.png', // Ensure you put a default 1200x630 image at public/og-image.png
-  canonicalURL = new URL(Astro.url.pathname, Astro.site || Astro.url.origin).href,
-  schema,
-} = Astro.props;
+const { title, description, image = "/og-image.png", schema } = Astro.props;
 
-const siteName = 'SnapErase';
+// Safe, non-recursive URL evaluation
+const siteOrigin = Astro.site
+  ? Astro.site.origin
+  : Astro.url
+    ? Astro.url.origin
+    : "https://shaurya8425-bg-remover.pages.dev";
 
-// Default Schema.org metadata for your tool
+const currentPath = Astro.url ? Astro.url.pathname : "/";
+
+// Explicitly construct canonical and image URLs as strings
+const canonicalURL = Astro.props.canonicalURL || `${siteOrigin}${currentPath}`;
+const ogImageUrl = image.startsWith("http")
+  ? image
+  : `${siteOrigin}${image.startsWith("/") ? image : "/" + image}`;
+
+const siteName = "SnapErase";
+
+// Default Schema.org metadata
 const defaultSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  'name': siteName,
-  'operatingSystem': 'All',
-  'applicationCategory': 'MultimediaApplication',
-  'offers': {
-    '@type': 'Offer',
-    'price': '0',
-    'priceCurrency': 'USD',
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: siteName,
+  operatingSystem: "All",
+  applicationCategory: "MultimediaApplication",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
   },
-  'description': description,
+  description: description,
 };
 
 const combinedSchema = schema
@@ -56,7 +66,7 @@ const combinedSchema = schema
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={new URL(image, Astro.url.origin).href} />
+    <meta property="og:image" content={ogImageUrl} />
     <meta property="og:site_name" content={siteName} />
 
     <!-- Twitter -->
@@ -64,7 +74,7 @@ const combinedSchema = schema
     <meta property="twitter:url" content={canonicalURL} />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={new URL(image, Astro.url.origin).href} />
+    <meta property="twitter:image" content={ogImageUrl} />
 
     <!-- Favicon & PWA Metadata -->
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
@@ -75,7 +85,10 @@ const combinedSchema = schema
     <link rel="manifest" href="/site.webmanifest" />
 
     <!-- JSON-LD Structured Data Injection -->
-    <script type="application/ld+json" set:html={JSON.stringify(combinedSchema)} />
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(combinedSchema)}
+    />
 
     <!-- Service Worker Registration -->
     <script>
