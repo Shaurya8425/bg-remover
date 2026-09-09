@@ -12,26 +12,28 @@ import "../styles/global.css";
   description="Remove image background online for free. Instantly create transparent PNGs and clean white backgrounds with client-side AI. Zero server uploads."
 >
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-12">
-    <!-- Hero Header -->
-    <div class="text-center max-w-3xl mx-auto space-y-3">
-      <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-        AI Background Remover <span class="bg-gradient-to-r from-indigo-400 to-sky-400 bg-clip-text text-transparent">Online Free</span>
-      </h1>
-      <p class="text-slate-400 text-sm sm:text-lg max-w-2xl mx-auto">
-        Automatically remove background from images in seconds. Create clean transparent PNG cutouts or white backgrounds instantly inside your browser.
-      </p>
-    </div>
+    <!-- Hero Header / Main Tool Section -->
+    <section id="hero" class="scroll-mt-24 space-y-8">
+      <div class="text-center max-w-3xl mx-auto space-y-3">
+        <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+          AI Background Remover <span class="bg-gradient-to-r from-indigo-500 to-sky-500 dark:from-indigo-400 dark:to-sky-400 bg-clip-text text-transparent">Online Free</span>
+        </h1>
+        <p class="text-slate-600 dark:text-slate-400 text-sm sm:text-lg max-w-2xl mx-auto">
+          Automatically remove background from images in seconds. Create clean transparent PNG cutouts or white backgrounds instantly inside your browser.
+        </p>
+      </div>
 
-    <!-- Main Workspace Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-      <DropZone />
-      <ControlPanel />
-    </div>
+      <!-- Main Workspace Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <DropZone />
+        <ControlPanel />
+      </div>
+    </section>
 
-    <!-- On-Page SEO Content Article -->
-    <article class="border-t border-slate-800/80 pt-12 text-slate-300 leading-relaxed space-y-8 max-w-5xl mx-auto">
+    <!-- On-Page SEO Content Article / Explanation Section -->
+    <article id="how-it-works" class="scroll-mt-24 border-t border-slate-200 dark:border-slate-800/80 pt-12 text-slate-700 dark:text-slate-300 leading-relaxed space-y-8 max-w-5xl mx-auto transition-colors">
       <section class="space-y-4">
-        <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
           The Fast, Private & Free AI Background Remover
         </h2>
         <p>
@@ -43,26 +45,26 @@ import "../styles/global.css";
       </section>
 
       <section class="grid md:grid-cols-2 gap-6 my-8">
-        <div class="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 space-y-2">
-          <h3 class="text-lg font-bold text-indigo-400">Automated PNG Cutouts in 1 Click</h3>
-          <p class="text-slate-400 text-sm">
+        <div class="bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 space-y-2 shadow-sm dark:shadow-none transition-colors">
+          <h3 class="text-lg font-bold text-indigo-600 dark:text-indigo-400">Automated PNG Cutouts in 1 Click</h3>
+          <p class="text-slate-600 dark:text-slate-400 text-sm">
             Tired of spending minutes manually tracing outlines with lasso tools? Our <strong>png background remover</strong> isolates complex edge features like hair, fur, transparent glass, and product contours automatically to create a pixel-perfect <strong>transparent background png</strong>.
           </p>
         </div>
-        <div class="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 space-y-2">
-          <h3 class="text-lg font-bold text-sky-400">Clean White Background Remover for E-Commerce</h3>
-          <p class="text-slate-400 text-sm">
+        <div class="bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 space-y-2 shadow-sm dark:shadow-none transition-colors">
+          <h3 class="text-lg font-bold text-sky-600 dark:text-sky-400">Clean White Background Remover for E-Commerce</h3>
+          <p class="text-slate-600 dark:text-slate-400 text-sm">
             Online marketplaces like Amazon, eBay, Shopify, and Etsy require clean product photos. Use our built-in <strong>white background remover</strong> mode to automatically convert noisy room backgrounds into compliant product photos with studio lighting.
           </p>
         </div>
       </section>
 
       <section class="space-y-4">
-        <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">How Our Picture Background Remover Works</h2>
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">How Our Picture Background Remover Works</h2>
         <p>
           Learning how to <strong>remove background online</strong> effortlessly comes down to leveraging intelligent computer vision. Here is how our automated pipeline delivers isolated graphics in 3 steps:
         </p>
-        <ol class="list-decimal pl-6 space-y-2 text-slate-300">
+        <ol class="list-decimal pl-6 space-y-2 text-slate-700 dark:text-slate-300">
           <li><strong>Select Your Photo:</strong> Drag and drop any image into the workspace. Our <strong>picture background remover</strong> supports JPG, PNG, WEBP, and AVIF formats.</li>
           <li><strong>AI Edge Detection & Masking:</strong> The embedded <strong>background remover ai</strong> inspects pixel contrast, color channels, and depth maps to differentiate foreground subjects from backdrops.</li>
           <li><strong>Export & Replace:</strong> Download your high-resolution <strong>background remover png</strong> file directly, or use our control panel to select solid background colors or backdrop replacements.</li>
@@ -71,7 +73,9 @@ import "../styles/global.css";
     </article>
 
     <!-- Collapsible FAQ Accordion Component -->
-    <FaqAccordion />
+    <section id="faq" class="scroll-mt-24">
+      <FaqAccordion />
+    </section>
   </main>
 </Layout>
 

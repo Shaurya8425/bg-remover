@@ -1,1 +1,9 @@
 @import "tailwindcss";
+
+/* Enable class-based dark mode switching for Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
+/* Smooth transition for theme color changes */
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
