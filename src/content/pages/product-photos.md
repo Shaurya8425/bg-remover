@@ -18,7 +18,7 @@ faq:
   - question: "How do I make a product photo background pure white?"
     answer: "Upload your product image to our free background remover tool, set the default output background color to pure white (#FFFFFF), and instantly download your marketplace-ready JPEG or PNG."
   - question: "What is the best white background remover for Amazon product photos?"
-    answer: "SnapErase is an ideal white background remover for Amazon because it automatically detects product boundaries and sets the backdrop to exact RGB 255, 255, 255 required by Amazon."
+    answer: "BGRemoveIO is an ideal white background remover for Amazon because it automatically detects product boundaries and sets the backdrop to exact RGB 255, 255, 255 required by Amazon."
   - question: "Can I remove background from product photos on my phone?"
     answer: "Yes, you can run this photo background remover directly in Safari or Chrome on Android and iOS devices without downloading an app."
 ---

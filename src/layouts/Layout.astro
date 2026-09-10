@@ -17,7 +17,7 @@ const siteOrigin = Astro.site
   ? Astro.site.origin
   : Astro.url
     ? Astro.url.origin
-    : "https://shaurya8425-bg-remover.pages.dev";
+    : "https://bgremoveio.com";
 
 const currentPath = Astro.url ? Astro.url.pathname : "/";
 const isHomePage = currentPath === "/" || currentPath === "";
@@ -29,7 +29,7 @@ const ogImageUrl = image.startsWith("http")
   ? image
   : `${siteOrigin}${image.startsWith("/") ? image : "/" + image}`;
 
-const siteName = "SnapErase";
+const siteName = "BGRemoveIO";
 
 // Default Schema.org metadata
 const defaultSchema = {
@@ -106,7 +106,7 @@ const navLinks = [
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="SnapErase" />
+    <meta name="apple-mobile-web-app-title" content="BGRemoveIO" />
     <link rel="manifest" href="/site.webmanifest" />
 
     <!-- JSON-LD Structured Data Injection -->
@@ -134,7 +134,7 @@ const navLinks = [
         class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between"
       >
         <!-- Brand Logo -->
-        <a href="/" class="flex items-center gap-3 group">
+        <a href="/" class="flex items-center gap-2.5 group">
           <div
             class="h-9 w-9 flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
           >
@@ -169,9 +169,14 @@ const navLinks = [
                 fill="#ffffff"></path>
             </svg>
           </div>
-          <span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white"
-            >SnapErase</span
-          >
+          <div class="flex items-center gap-1">
+            <span class="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
+              BGRemove
+            </span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/60">
+              IO
+            </span>
+          </div>
         </a>
 
         <!-- Desktop Navigation Links -->
@@ -283,7 +288,7 @@ const navLinks = [
     <footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-auto">
       <div class="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
         <div>
-          © {new Date().getFullYear()} {siteName}. Privacy-focused background removal.
+          © {new Date().getFullYear()} <span class="font-semibold text-slate-700 dark:text-slate-300">BGRemoveIO</span>. Privacy-focused background removal.
         </div>
         <div class="flex flex-wrap items-center justify-center gap-6">
           <a href={isHomePage ? "#hero" : "/#hero"} class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">Tool</a>

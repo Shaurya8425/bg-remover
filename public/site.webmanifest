@@ -1,6 +1,6 @@
 {
-  "name": "SnapeErase",
-  "short_name": "SnapE",
+  "name": "BGRemoveIO",
+  "short_name": "BGRemoveIO",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

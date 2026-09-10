@@ -1,6 +1,6 @@
 ---
 title: "Free Online Transparent PNG Maker — Instant AI Background Eraser"
-metaDescription: "Convert images to transparent PNG instantly in your browser. 100% free, private client-side AI, no sign-ups or server uploads."
+metaDescription: "Convert images to transparent PNG instantly in your browser with BGRemoveIO. 100% free, private client-side AI, no sign-ups or server uploads."
 targetKeyword: "transparent png maker"
 heroHeading: "Create Transparent PNGs <span class='text-indigo-400'>Instantly</span>"
 heroSubheading: "Extract subjects from photos automatically with client-side AI. Zero file uploads."

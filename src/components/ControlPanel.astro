@@ -1,3 +1,4 @@
+ControlPanel.astro
 ---
 interface Props {
   defaultMode?: string;
@@ -99,9 +100,15 @@ const { defaultMode = "transparent", defaultColor = "#ffffff" } = Astro.props;
       id="download-btn"
       type="button"
       disabled
-      class="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-semibold text-sm cursor-not-allowed transition-all flex items-center justify-center gap-2"
+      class="w-full py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-sm
+             /* Disabled state */
+             disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 dark:disabled:bg-slate-800/60 dark:disabled:text-slate-600 dark:disabled:border-slate-800 disabled:cursor-not-allowed disabled:shadow-none border border-transparent
+             /* Active state (when disabled attribute is removed via JS) */
+             enabled:bg-gradient-to-r enabled:from-indigo-600 enabled:to-violet-600 enabled:text-white enabled:hover:from-indigo-500 enabled:hover:to-violet-500 enabled:active:scale-[0.98] enabled:shadow-lg enabled:shadow-indigo-500/25 dark:enabled:shadow-indigo-900/30 enabled:cursor-pointer
+             /* Focus states */
+             focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
     >
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-4 h-4 transition-transform group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
       </svg>
       Download High-Res Image
